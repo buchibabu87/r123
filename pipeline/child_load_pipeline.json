@@ -1,285 +1,9 @@
 {
 	"name": "child_load_pipeline",
 	"properties": {
-		"description": "Hello from NDC Sydney!!!",
 		"activities": [
 			{
-				"name": "ForEach-process1by1",
-				"type": "ForEach",
-				"dependsOn": [
-					{
-						"activity": "Filter-files",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"items": {
-						"value": "@activity('Filter-files').output.value",
-						"type": "Expression"
-					},
-					"activities": [
-						{
-							"name": "update-log-proc",
-							"type": "SqlServerStoredProcedure",
-							"dependsOn": [
-								{
-									"activity": "Copy-Adlsgen1-To-Gen2",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"timeout": "7.00:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"storedProcedureName": "[dbo].[PROC_ETL_LOAD_STATUS]",
-								"storedProcedureParameters": {
-									"activityname": {
-										"value": "copyActivity",
-										"type": "String"
-									},
-									"activitystatus": {
-										"value": {
-											"value": "@activity('Copy-Adlsgen1-To-Gen2').output.executionDetails[0].status",
-											"type": "Expression"
-										},
-										"type": "String"
-									},
-									"Createdon": {
-										"value": {
-											"value": "@utcnow()",
-											"type": "Expression"
-										},
-										"type": "DateTime"
-									},
-									"DataFactoryName": {
-										"value": {
-											"value": "@pipeline().DataFactory",
-											"type": "Expression"
-										},
-										"type": "String"
-									},
-									"endtime": {
-										"value": {
-											"value": "@utcnow()",
-											"type": "Expression"
-										},
-										"type": "DateTime"
-									},
-									"ErrorMessage": {
-										"value": {
-											"value": "@activity('Copy-Adlsgen1-To-Gen2').output.errors",
-											"type": "Expression"
-										},
-										"type": "String"
-									},
-									"PipelineName": {
-										"value": {
-											"value": "@pipeline().Pipeline",
-											"type": "Expression"
-										},
-										"type": "String"
-									},
-									"readrows": {
-										"value": {
-											"value": "@activity('Copy-Adlsgen1-To-Gen2').output.dataRead",
-											"type": "Expression"
-										},
-										"type": "String"
-									},
-									"runid": {
-										"value": {
-											"value": "@pipeline().RunId",
-											"type": "Expression"
-										},
-										"type": "String"
-									},
-									"starttime": {
-										"value": {
-											"value": "@activity('Copy-Adlsgen1-To-Gen2').output.executionDetails[0].start",
-											"type": "Expression"
-										},
-										"type": "DateTime"
-									},
-									"writerows": {
-										"value": {
-											"value": "@activity('Copy-Adlsgen1-To-Gen2').output.dataWritten",
-											"type": "Expression"
-										},
-										"type": "String"
-									}
-								}
-							},
-							"linkedServiceName": {
-								"referenceName": "Metadata_SQLDB_LS",
-								"type": "LinkedServiceReference"
-							}
-						},
-						{
-							"name": "Copy-Adlsgen1-To-Gen2",
-							"type": "Copy",
-							"dependsOn": [
-								{
-									"activity": "OnPrem_To_Azure",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"timeout": "7.00:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"source": {
-									"type": "BinarySource",
-									"storeSettings": {
-										"type": "AzureDataLakeStoreReadSettings",
-										"recursive": true
-									},
-									"formatSettings": {
-										"type": "BinaryReadSettings"
-									}
-								},
-								"sink": {
-									"type": "BinarySink",
-									"storeSettings": {
-										"type": "AzureBlobStorageWriteSettings"
-									}
-								},
-								"enableStaging": false
-							},
-							"inputs": [
-								{
-									"referenceName": "Source_ADLS_DS",
-									"type": "DatasetReference",
-									"parameters": {
-										"FolderPath": {
-											"value": "@pipeline().parameters.SourceStore_Location",
-											"type": "Expression"
-										},
-										"Directory": {
-											"value": "@pipeline().parameters.SourceStore_Directory",
-											"type": "Expression"
-										},
-										"filename": {
-											"value": "@item().name",
-											"type": "Expression"
-										}
-									}
-								}
-							],
-							"outputs": [
-								{
-									"referenceName": "Target_BLOB_DS",
-									"type": "DatasetReference",
-									"parameters": {
-										"FolderPath": {
-											"value": "@pipeline().parameters.TargetStore_Location",
-											"type": "Expression"
-										},
-										"Directory": {
-											"value": "@pipeline().parameters.TargetStore_Directory",
-											"type": "Expression"
-										},
-										"filename": {
-											"value": "*.csv",
-											"type": "Expression"
-										}
-									}
-								}
-							]
-						},
-						{
-							"name": "OnPrem_To_Azure",
-							"type": "Copy",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "7.00:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"source": {
-									"type": "BinarySource",
-									"storeSettings": {
-										"type": "FileServerReadSettings",
-										"recursive": true
-									},
-									"formatSettings": {
-										"type": "BinaryReadSettings"
-									}
-								},
-								"sink": {
-									"type": "BinarySink",
-									"storeSettings": {
-										"type": "AzureDataLakeStoreWriteSettings"
-									}
-								},
-								"enableStaging": false
-							},
-							"inputs": [
-								{
-									"referenceName": "DS_ONPREM_BINARY_BINARY",
-									"type": "DatasetReference",
-									"parameters": {
-										"FolderPath": {
-											"value": "@pipeline().parameters.SourceStore_Location",
-											"type": "Expression"
-										},
-										"Directory": {
-											"value": "@pipeline().parameters.SourceStore_Directory",
-											"type": "Expression"
-										},
-										"filename": {
-											"value": "@item().name",
-											"type": "Expression"
-										}
-									}
-								}
-							],
-							"outputs": [
-								{
-									"referenceName": "Source_ADLS_DS",
-									"type": "DatasetReference",
-									"parameters": {
-										"FolderPath": {
-											"value": "@pipeline().parameters.SourceStore_Location",
-											"type": "Expression"
-										},
-										"Directory": {
-											"value": "@pipeline().parameters.TargetStore_Directory",
-											"type": "Expression"
-										},
-										"filename": {
-											"value": "@item().name",
-											"type": "Expression"
-										}
-									}
-								}
-							]
-						}
-					]
-				}
-			},
-			{
-				"name": "OnPremfolders",
+				"name": "Get Metadata1",
 				"type": "GetMetadata",
 				"dependsOn": [],
 				"policy": {
@@ -292,9 +16,13 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataset": {
-						"referenceName": "DS_ONPREM_METASTORE",
+						"referenceName": "Source_Folder_Metadata_DS",
 						"type": "DatasetReference",
 						"parameters": {
+							"FolderPath": {
+								"value": "@pipeline().parameters.SourceStore_Location",
+								"type": "Expression"
+							},
 							"Directory": {
 								"value": "@pipeline().parameters.SourceStore_Directory",
 								"type": "Expression"
@@ -305,35 +33,12 @@
 						"childItems"
 					],
 					"storeSettings": {
-						"type": "FileServerReadSettings",
+						"type": "AzureBlobFSReadSettings",
 						"recursive": true,
 						"enablePartitionDiscovery": false
 					},
 					"formatSettings": {
-						"type": "BinaryReadSettings"
-					}
-				}
-			},
-			{
-				"name": "Filter-files",
-				"type": "Filter",
-				"dependsOn": [
-					{
-						"activity": "OnPremfolders",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"items": {
-						"value": "@activity('OnPremfolders').output.childitems",
-						"type": "Expression"
-					},
-					"condition": {
-						"value": "@equals(item().type,'File')",
-						"type": "Expression"
+						"type": "DelimitedTextReadSettings"
 					}
 				}
 			}
@@ -358,7 +63,8 @@
 				"type": "string"
 			}
 		},
-		"annotations": []
+		"annotations": [],
+		"lastPublishTime": "2021-05-29T14:37:21Z"
 	},
 	"type": "Microsoft.DataFactory/factories/pipelines"
 }
